@@ -6,28 +6,27 @@
 ## Updated experimental results will be released soon!
 
 <p align="center">
-<img src="misc/Framework.png" width="900" class="center">
+<img src="misc/Fig2.png" width="900" class="center">
 </p>
 
 ## Datasets
 ### Available Datasets
 We used public MIMIC-III and CAS-BP dataset and our collected private Mindray dataset in this study.
-- [MIMIC dataset](https://physionet.org/content/mimic3wdb-matched/1.0/)  
-- [CAS-BP dataset](https://github.com/zdzdliu/CAS-BP) 
-- [Aurora-BP dataset (Results will be publicized after approval by Microsoft's reviewers)](https://pubmed.ncbi.nlm.nih.gov/35201992/) 
+- [MIMIC III waveform dataset](https://physionet.org/content/mimic3wdb-matched/1.0/)  
+- [MIndray dataset]()
 
 ## Implementation Code
 ### Requirmenets:
 - Python==2.7
 - Pytorch==0.4.1
-- TorchVision==0.2.1
-- CUDA==9.0  
+- CUDA==9.0
+- Scikit-learn==0.23.2
 - Numpy==1.16.5
+- Imbalanced-learn==1.7.0
 - Scipy==1.3.1
 - Pandas==0.23.4
-- skorch (For DEV risk calculations)
-- openpyxl (for BP estimation reports)
-- Wandb (for sweeps)
+- Matplotlib==3.3.2
+
 ### More detailed notes will be released soon!
 ### Adding New Dataset
 #### Structure of data
@@ -50,6 +49,7 @@ the training parameters.
 
 ### Existing Algorithms
 #### Architectures
+- [SEM-ResNet]()
 - [GRU](https://arxiv.org/abs/1412.3555)
 - [ResNet](https://arxiv.org/abs/1611.06455)
 - [TCN](https://arxiv.org/abs/1803.01271)
@@ -59,95 +59,95 @@ the training parameters.
 - [GRU-FCN](https://arxiv.org/abs/1812.07683)
 - [Transformer](https://arxiv.org/abs/1706.03762)
 #### Regressors
+- [AutoML](https://docs.h2o.ai/h2o/latest-stable/h2o-docs/automl.html)
 - [KNN](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)
 - [SVR](http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)
 - [RF](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
 - [XGBoost](https://xgboost.readthedocs.io/en/stable/)
 - [Stacking](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html)
 - [MLP](http://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)
+#### Two-Stage
+- [SMART-BP]()
 
 
 ### Adding New Algorithm
-To add a new Architectures or Regressors, place it in `algorithms/algorithms.py` file.
+- To add a new Regressor, place it in `algorithms/algorithms.py` file.
+- To add a new Architecture, place it in `models/arch.py` file.
 
-## Training procedure
+## Experiments procedure
 
 The experiments are organised in a hierarchical way such that:
-- Several experiments are collected under one directory assigned by `--experiment_description`.
-- Each experiment could have different trials, each is specified by `--run_description`.
-- For example, if we want to experiment different *BP estimation* methods with CNN backbone and MLP regressor, we can assign
-`--experiment_description CNN_backnones --run_description UPR-BP` and `--experiment_description CNN_backnones --reg MLP --run_description UPR-BP` and so on.
+- Several filters are collected under one directory assigned by `--filters`.
+- Several segmentation methods are collected under one directory assigned by `--segments`.
+- Several feature extraction methods are collected under one directory assigned by `--feat_extrat`.
+- Several visualization methods are collected under one directory assigned by `--visualization`.
 
 ### Training a model
 
-Unsupervised Pretraining:
+For BP interval classification:
 
 ```
-python main.py  --experiment_description exp1  \
+python trainers/train.py  --experiment_description cls  \
                 --run_description run_1 \
-                --da_method CNN \
+                --da_method SEM-ResNet \
                 --dataset MIMIC \
-                --backbone CNN \
-                --num_runs 5 \
-                --mode train \
-                --is_sweep False
-```
-
-Linear Evaluation:
-
-```
-python main.py  --experiment_description exp1  \
-                --run_description run_1 \
-                --da_method CNN \
-                --dataset MIMIC \
-                --backbone CNN \
-                --mode linear \
-                --is_sweep False
-```
-Semi-supervised Evaluation:
-
-```
-python main.py  --experiment_description exp1  \
-                --run_description run_1 \
-                --da_method CNN \
-                --dataset MIMIC \
-                --backbone CNN \
-                --mode semi-supervised \
-                --is_sweep False
-```
-### Launching a sweep
-Sweeps here are deployed on [Wandb](https://wandb.ai/), which makes it easier for visualization, following the training progress, organizing sweeps, and collecting results.
-
-```
-python main.py  --experiment_description exp1_sweep  \
-                --run_description sweep_over_lr \
-                --da_method ResNet \
-                --dataset MIMIC \
-                --backbone CNN \
+                --backbone resnet \
                 --num_runs 200 \
-                --is_sweep True \
-                --num_sweeps 50 \
-                --sweep_project_wandb TEST
+                --mode train
 ```
-Upon the run, you will find the running progress in the specified project page in wandb.
 
-`Note:` If you got cuda out of memory error during testing, this is probably due to DEV risk calculations.
+For BP values estimation:
 
+```
+python trainers/train.py  --experiment_description reg  \
+                --run_description run_2 \
+                --da_method AutoML \
+                --dataset MIMIC \
+                --backbone XGBoost \
+                --mode train
+```
 
-## Results
-- Each run will have all the cross-domain scenarios results in the format `PPG_to_BP_run_i`, where `i`
-is the run_id (you can have multiple runs by assigning `--num_runs` arg). 
-- Under each directory, you will find the BP estimation report, a log file, checkpoint, 
-and the different risks scores.
-- By the end of the all the runs, you will find the overall average and std results in the run directory.
+### Inference Process
 
+```
+python cascade.py
+```
+
+## View high-quality images of the paper
+
+```
+import os
+from PIL import Image
+
+def view_images_in_folder(folder_path):
+    # Get a list of all files in the folder
+    file_list = os.listdir(folder_path)
+
+    # Iterate over the files
+    for filename in file_list:
+        # Check if the file is an image (supports more formats than just .jpg)
+        if filename.endswith(".jpg") or filename.endswith(".png") or filename.endswith(".jpeg"):
+            # Construct the full file path
+            file_path = os.path.join(folder_path, filename)
+
+            try:
+                # Open and display the image using Pillow
+                img = Image.open(file_path)
+                img.show()
+            except Exception as e:
+                print(f"Error opening {file_path}: {e}")
+
+# Provide the folder path to view the images
+folder_path = "./misc"
+view_images_in_folder(folder_path)
+```
 
 ## Citation
 If you found this work useful for you, please consider citing it.
 ```
-@article{UPR-BP,
-  title   = {UPR-BP: Unsupervised Photoplethysmography Representation Learning for Noninvasive Blood Pressure Estimation},
-  author  = {Chenbin Ma, Peng Zhang, Fan Song, Zeyu Liu, Youdan Feng, Yufang He, GuangLei Zhang},
+@article{SMART-BP,
+  title   = {SMART-BP: Sem-Resnet and Auto-Regressor Based on a Two-Stage Framework for Noninvasive Blood Pressure Measurement},
+  author  = {Chenbin Ma, Yangyang Sun, Peng Zhang, Fan Song, Youdan Feng, Yufang He, GuangLei Zhang},
   journal = {####},
   year    = {2023}
 }

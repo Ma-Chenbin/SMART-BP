@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 
 class Trainer(AbstractTrainer):
     """
-   This class contain the main training functions for our UPR-BP
+   This class contain the main training functions for our SMART-BP
     """
 
     def __init__(self, args):
