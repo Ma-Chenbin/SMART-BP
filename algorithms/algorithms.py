@@ -12,6 +12,14 @@ from torch.optim.lr_scheduler import StepLR
 from copy import deepcopy
 import torch.nn. functional as F
 
+def get_algorithm_class(algorithm_name):
+    """Returns the corresponding algorithm class according to the algorithm name."""
+    if algorithm_name == 'cnn_regressor':
+        from algorithms.cnn_regressor import cnn_regressor
+        return cnn_regressor
+    else:
+        raise NotImplementedError(f"Algorithm '{algorithm_name}' not implemented.")
+
 
 class Algorithm(torch.nn.Module):
     """
